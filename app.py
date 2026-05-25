@@ -6,22 +6,12 @@ from datetime import datetime, timedelta, timezone
 from dateutil import parser as date_parser
 import re
 import logging
-import time
-import threading
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, static_folder='.')
-
-# In-memory cache and synchronization
-cached_articles = None
-last_fetch_time = 0
-FETCH_INTERVAL = 60  # 60 seconds (lowered for immediate testing)
-lock = threading.Lock()
-# Guard to prevent starting multiple cache threads in multi-worker environments
-cache_thread_started = False
 
 # Simple CORS middleware without flask_cors
 @app.after_request
@@ -34,7 +24,6 @@ def after_request(response):
 # List of RSS sources - STRICTLY MARINE-FOCUSED
 sources = [
     # International Marine News Outlets
-    {"name": "The Guardian Ocean & Marine", "url": "https://www.theguardian.com/environment/oceans/rss", "type": "news"},
     {"name": "BBC Ocean & Marine", "url": "http://feeds.bbci.co.uk/news/science_and_environment/rss.xml", "type": "news"},
     {"name": "The Conversation Ocean", "url": "https://theconversation.com/uk/oceans/articles.atom", "type": "news"},
     
@@ -47,7 +36,7 @@ sources = [
     {"name": "Vert Eco Articles", "url": "https://vert.eco/tous-les-articles", "type": "news"},
     {"name": "Le Monde Environnement", "url": "https://www.lemonde.fr/environnement/rss_full.xml", "type": "news"},
     {"name": "The Conversation Environment FR", "url": "https://theconversation.com/fr/environnement", "type": "news"},
-    {"name": "Guardian Oceans", "url": "https://www.theguardian.com/environment/oceans", "type": "news"},
+    
     {"name": "Ocean Central Stories", "url": "https://oceancentral.org/stories", "type": "news"},
     
     # Marine NGOs & International Organizations
@@ -256,7 +245,7 @@ def fetch_articles():
             if not getattr(feed, 'entries', None):
                 continue
             
-            for entry in feed.entries[:20]:
+            for entry in feed.entries:
                 try:
                     # Parse published date
                     if not hasattr(entry, 'published'):
@@ -409,58 +398,22 @@ def simple_clustering(articles):
     # Remove empty clusters
     return {k: v for k, v in clusters.items() if v}
 
-
-def refresh_cache():
-    """Background thread that refreshes the in-memory cache periodically."""
-    global cached_articles, last_fetch_time
-    while True:
-        try:
-            logger.info("Background refresh: fetching articles")
-            articles = fetch_articles()
-            categories = categorize_articles(articles)
-
-            # Cluster articles within each category
-            for cat in list(categories.keys()):
-                if categories[cat]:
-                    try:
-                        categories[cat] = simple_clustering(categories[cat])
-                    except Exception as e:
-                        logger.debug(f"Clustering error for category {cat}: {e}")
-                        categories[cat] = {}
-                else:
-                    categories[cat] = {}
-
-            with lock:
-                cached_articles = categories
-                last_fetch_time = int(time.time())
-
-            logger.info(f"Background refresh complete: {len(articles)} articles, updated at {last_fetch_time}")
-        except Exception as e:
-            logger.error(f"Error in background refresh: {e}", exc_info=True)
-        # Sleep until next refresh interval
-        try:
-            time.sleep(FETCH_INTERVAL)
-        except Exception:
-            # In case sleep is interrupted for any reason, continue loop
-            continue
-
-
-# Start background thread at import time (safe for Gunicorn / Flask 3.x)
-if not cache_thread_started:
-    cache_thread_started = True
-    threading.Thread(target=refresh_cache, daemon=True).start()
-
 @app.route('/api/news')
 def get_news():
-    """API endpoint to return cached news. If cache is empty, report loading."""
+    """API endpoint to fetch and process news"""
     try:
-        with lock:
-            data = cached_articles
-
-        if data is None:
-            return jsonify({"status": "loading"}), 202
-
-        return jsonify(data)
+        articles = fetch_articles()
+        categories = categorize_articles(articles)
+        
+        # Cluster articles within each category
+        for cat in categories:
+            if categories[cat]:
+                clustered = simple_clustering(categories[cat])
+                categories[cat] = clustered
+            else:
+                categories[cat] = {}
+        
+        return jsonify(categories)
     except Exception as e:
         logger.error(f"Error in /api/news: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 500
@@ -471,8 +424,4 @@ def index():
 
 if __name__ == '__main__':
     logger.info("Starting Flask server on http://localhost:5000")
-    # Ensure thread is started when running directly, but avoid duplicates
-    if not cache_thread_started:
-        cache_thread_started = True
-        threading.Thread(target=refresh_cache, daemon=True).start()
     app.run(debug=True, host='0.0.0.0', port=5000)
