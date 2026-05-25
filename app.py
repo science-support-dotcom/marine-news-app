@@ -24,6 +24,7 @@ def after_request(response):
 # List of RSS sources - STRICTLY MARINE-FOCUSED
 sources = [
     # International Marine News Outlets
+    {"name": "The Guardian Ocean & Marine", "url": "https://www.theguardian.com/environment/oceans/rss", "type": "news"},
     {"name": "BBC Ocean & Marine", "url": "http://feeds.bbci.co.uk/news/science_and_environment/rss.xml", "type": "news"},
     {"name": "The Conversation Ocean", "url": "https://theconversation.com/uk/oceans/articles.atom", "type": "news"},
     
@@ -36,6 +37,7 @@ sources = [
     {"name": "Vert Eco Articles", "url": "https://vert.eco/tous-les-articles", "type": "news"},
     {"name": "Le Monde Environnement", "url": "https://www.lemonde.fr/environnement/rss_full.xml", "type": "news"},
     {"name": "The Conversation Environment FR", "url": "https://theconversation.com/fr/environnement", "type": "news"},
+    {"name": "Guardian Oceans", "url": "https://www.theguardian.com/environment/oceans", "type": "news"},
     
     {"name": "Ocean Central Stories", "url": "https://oceancentral.org/stories", "type": "news"},
     
