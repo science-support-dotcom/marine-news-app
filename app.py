@@ -39,7 +39,17 @@ sources = [
     {"name": "The Conversation Environment FR", "url": "https://theconversation.com/fr/environnement", "type": "news"},
     {"name": "Guardian Oceans", "url": "https://www.theguardian.com/environment/oceans", "type": "news"},
     {"name": "Ocean Central Stories", "url": "https://oceancentral.org/stories", "type": "news"},
-    
+    {"name": "Nature Climate Change", "url": "https://www.nature.com/nclimate.rss", "type": "research"},
+    {"name": "Copernicus News", "url": "https://www.copernicus.eu/news/rss", "type": "news"},
+    {"name": "New York Times Energy & Environment", "url": "https://rss.nytimes.com/services/xml/rss/nyt/EnergyEnvironment.xml", "type": "news"},
+    {"name": "New York Times Climate", "url": "https://rss.nytimes.com/services/xml/rss/nyt/Climate.xml", "type": "news"},
+    {"name": "Science Advances", "url": "https://www.science.org/action/showFeed?type=etoc&feed=rss&jc=sciadv", "type": "research"},
+    {"name": "UN News Climate Change", "url": "https://news.un.org/feed/subscribe/en/news/topic/climate-change/feed/rss.xml", "type": "news"},
+    {"name": "UN News SDGs", "url": "https://news.un.org/feed/subscribe/en/news/topic/sdgs/feed/rss.xml", "type": "news"},
+    {"name": "Yale Climate Connections", "url": "https://yaleclimateconnections.org/feed/", "type": "news"},
+    {"name": "The Guardian Oceans", "url": "https://www.theguardian.com/environment/oceans/rss", "type": "news"},
+    {"name": "Inside Climate News", "url": "https://insideclimatenews.org/feed/", "type": "news"},
+    {"name": "Inside Climate News Science", "url": "https://insideclimatenews.org/category/science/feed/", "type": "research"},
     # Marine NGOs & International Organizations
     {"name": "Ocean Conservancy", "url": "https://oceanconservancy.org/feed/", "type": "news"},
     {"name": "WWF Marine", "url": "https://www.worldwildlife.org/feed.xml", "type": "news"},
