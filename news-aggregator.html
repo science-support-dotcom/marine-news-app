@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marine Environment News Aggregator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2e7d32 0%, #1976d2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-bottom: 1px solid #eee;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+            font-size: 16px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4caf50;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .content {
+            padding: 20px;
+            max-height: 800px;
+            overflow-y: auto;
+        }
+
+        .category-section {
+            margin-bottom: 40px;
+        }
+
+        .category-title {
+            background: #1976d2;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 6px;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            border-left: 5px solid #f57c00;
+        }
+
+        .theme-subsection {
+            margin-bottom: 30px;
+            padding-left: 20px;
+        }
+
+        .theme-title {
+            background: #f57c00;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .article-item {
+            background: #f9f9f9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .article-item:hover {
+            background: #f0f0f0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .article-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .article-title a {
+            color: #1976d2;
+            text-decoration: none;
+            word-break: break-word;
+        }
+
+        .article-title a:hover {
+            text-decoration: underline;
+            color: #0d47a1;
+        }
+
+        .article-meta {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .article-source {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 3px 8px;
+            border-radius: 3px;
+            margin-right: 10px;
+            font-weight: 500;
+        }
+
+        .article-date {
+            display: inline-block;
+            color: #999;
+            font-size: 12px;
+        }
+
+        .article-summary {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.5;
+            margin-top: 8px;
+            font-style: italic;
+            padding-top: 8px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+            font-size: 16px;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px;
+            border-left: 4px solid #c62828;
+        }
+
+        .last-updated {
+            text-align: center;
+            padding: 10px 20px;
+            background: #f9f9f9;
+            border-top: 1px solid #eee;
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌊 Marine & Environmental News Aggregator</h1>
+            <p>Latest news from the last 14 days on marine conservation, climate change, and environmental policy</p>
+        </div>
+
+        <div class="controls">
+            <button id="refresh">🔄 Refresh News</button>
+            <button id="toggleOtherNews">📰 Show Other News</button>
+            <button id="export">💾 Export to JSON</button>
+        </div>
+
+        <div id="news" class="content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading news...</p>
+            </div>
+        </div>
+
+        <div class="last-updated" id="lastUpdated"></div>
+    </div>
+
+    <script>
+        let newsData = {};
+        let showOtherNews = false;
+
+        document.getElementById('refresh').addEventListener('click', loadNews);
+        document.getElementById('export').addEventListener('click', exportJSON);
+        document.getElementById('toggleOtherNews').addEventListener('click', () => {
+            showOtherNews = !showOtherNews;
+            document.getElementById('toggleOtherNews').textContent = showOtherNews ? '📰 Hide Other News' : '📰 Show Other News';
+            displayNews(newsData);
+        });
+
+        function loadNews() {
+            const newsDiv = document.getElementById('news');
+            newsDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading news...</p></div>';
+
+            fetch('/api/news')
+                .then(response => response.json())
+                .then(data => {
+                    newsData = data;
+                    displayNews(data);
+                    document.getElementById('lastUpdated').textContent = 'Last updated: ' + new Date().toLocaleString();
+                })
+                .catch(error => {
+                    console.error('Error fetching news:', error);
+                    newsDiv.innerHTML = '<div class="error">Error loading news. Please try again.</div>';
+                });
+        }
+
+        function displayNews(data) {
+            const newsDiv = document.getElementById('news');
+            newsDiv.innerHTML = '';
+
+            let hasContent = false;
+
+            for (const category in data) {
+                if (category === 'Other News' && !showOtherNews) {
+                    continue;
+                }
+
+                const catData = data[category];
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'category-section';
+
+                const categoryTitle = document.createElement('div');
+                categoryTitle.className = 'category-title';
+                categoryTitle.textContent = category;
+                categoryDiv.appendChild(categoryTitle);
+
+                let themesHtml = '';
+                for (const theme in catData) {
+                    const articles = catData[theme];
+                    if (articles && articles.length > 0) {
+                        hasContent = true;
+                        themesHtml += `<div class="theme-subsection">
+                            <div class="theme-title">${theme}</div>
+                            <ul style="list-style: none;">`;
+
+                        for (const article of articles) {
+                            const pubDate = new Date(article.published).toLocaleDateString();
+                            themesHtml += `<li class="article-item">
+                                <div class="article-title">
+                                    <a href="${article.link}" target="_blank" rel="noopener noreferrer">${article.title}</a>
+                                </div>
+                                <div class="article-meta">
+                                    <span class="article-source">${article.source}</span>
+                                    <span class="article-date">${pubDate}</span>
+                                </div>`;
+
+                            if (article.summary) {
+                                themesHtml += `<div class="article-summary">${article.summary}</div>`;
+                            }
+
+                            themesHtml += '</li>';
+                        }
+
+                        themesHtml += '</ul></div>';
+                    }
+                }
+
+                if (themesHtml) {
+                    categoryDiv.innerHTML += themesHtml;
+                    newsDiv.appendChild(categoryDiv);
+                }
+            }
+
+            if (!hasContent) {
+                newsDiv.innerHTML = '<div class="no-results">No articles found matching the criteria.</div>';
+            }
+        }
+
+        function exportJSON() {
+            if (Object.keys(newsData).length === 0) {
+                alert('No data to export. Please load news first.');
+                return;
+            }
+
+            const dataStr = JSON.stringify(newsData, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+            const exportFileDefaultName = 'news_export_' + new Date().toISOString().slice(0, 10) + '.json';
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+
+        // Load news on page load
+        loadNews();
+    </script>
+</body>
+</html>
