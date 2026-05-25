@@ -6,12 +6,20 @@ from datetime import datetime, timedelta, timezone
 from dateutil import parser as date_parser
 import re
 import logging
+import time
+import threading
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, static_folder='.')
+
+# In-memory cache and synchronization
+cached_articles = None
+last_fetch_time = 0
+FETCH_INTERVAL = 60  # 60 seconds (lowered for immediate testing)
+lock = threading.Lock()
 
 # Simple CORS middleware without flask_cors
 @app.after_request
@@ -39,17 +47,7 @@ sources = [
     {"name": "The Conversation Environment FR", "url": "https://theconversation.com/fr/environnement", "type": "news"},
     {"name": "Guardian Oceans", "url": "https://www.theguardian.com/environment/oceans", "type": "news"},
     {"name": "Ocean Central Stories", "url": "https://oceancentral.org/stories", "type": "news"},
-    {"name": "Nature Climate Change", "url": "https://www.nature.com/nclimate.rss", "type": "research"},
-    {"name": "Copernicus News", "url": "https://www.copernicus.eu/news/rss", "type": "news"},
-    {"name": "New York Times Energy & Environment", "url": "https://rss.nytimes.com/services/xml/rss/nyt/EnergyEnvironment.xml", "type": "news"},
-    {"name": "New York Times Climate", "url": "https://rss.nytimes.com/services/xml/rss/nyt/Climate.xml", "type": "news"},
-    {"name": "Science Advances", "url": "https://www.science.org/action/showFeed?type=etoc&feed=rss&jc=sciadv", "type": "research"},
-    {"name": "UN News Climate Change", "url": "https://news.un.org/feed/subscribe/en/news/topic/climate-change/feed/rss.xml", "type": "news"},
-    {"name": "UN News SDGs", "url": "https://news.un.org/feed/subscribe/en/news/topic/sdgs/feed/rss.xml", "type": "news"},
-    {"name": "Yale Climate Connections", "url": "https://yaleclimateconnections.org/feed/", "type": "news"},
-    {"name": "The Guardian Oceans", "url": "https://www.theguardian.com/environment/oceans/rss", "type": "news"},
-    {"name": "Inside Climate News", "url": "https://insideclimatenews.org/feed/", "type": "news"},
-    {"name": "Inside Climate News Science", "url": "https://insideclimatenews.org/category/science/feed/", "type": "research"},
+    
     # Marine NGOs & International Organizations
     {"name": "Ocean Conservancy", "url": "https://oceanconservancy.org/feed/", "type": "news"},
     {"name": "WWF Marine", "url": "https://www.worldwildlife.org/feed.xml", "type": "news"},
@@ -256,7 +254,7 @@ def fetch_articles():
             if not getattr(feed, 'entries', None):
                 continue
             
-            for entry in feed.entries:
+            for entry in feed.entries[:20]:
                 try:
                     # Parse published date
                     if not hasattr(entry, 'published'):
@@ -409,22 +407,58 @@ def simple_clustering(articles):
     # Remove empty clusters
     return {k: v for k, v in clusters.items() if v}
 
+
+def refresh_cache():
+    """Background thread that refreshes the in-memory cache periodically."""
+    global cached_articles, last_fetch_time
+    while True:
+        try:
+            logger.info("Background refresh: fetching articles")
+            articles = fetch_articles()
+            categories = categorize_articles(articles)
+
+            # Cluster articles within each category
+            for cat in list(categories.keys()):
+                if categories[cat]:
+                    try:
+                        categories[cat] = simple_clustering(categories[cat])
+                    except Exception as e:
+                        logger.debug(f"Clustering error for category {cat}: {e}")
+                        categories[cat] = {}
+                else:
+                    categories[cat] = {}
+
+            with lock:
+                cached_articles = categories
+                last_fetch_time = int(time.time())
+
+            logger.info(f"Background refresh complete: {len(articles)} articles, updated at {last_fetch_time}")
+        except Exception as e:
+            logger.error(f"Error in background refresh: {e}", exc_info=True)
+        # Sleep until next refresh interval
+        try:
+            time.sleep(FETCH_INTERVAL)
+        except Exception:
+            # In case sleep is interrupted for any reason, continue loop
+            continue
+
+
+# Ensure background thread starts once when the app is ready to serve requests
+@app.before_first_request
+def _start_background_thread():
+    threading.Thread(target=refresh_cache, daemon=True).start()
+
 @app.route('/api/news')
 def get_news():
-    """API endpoint to fetch and process news"""
+    """API endpoint to return cached news. If cache is empty, report loading."""
     try:
-        articles = fetch_articles()
-        categories = categorize_articles(articles)
-        
-        # Cluster articles within each category
-        for cat in categories:
-            if categories[cat]:
-                clustered = simple_clustering(categories[cat])
-                categories[cat] = clustered
-            else:
-                categories[cat] = {}
-        
-        return jsonify(categories)
+        with lock:
+            data = cached_articles
+
+        if data is None:
+            return jsonify({"status": "loading"}), 202
+
+        return jsonify(data)
     except Exception as e:
         logger.error(f"Error in /api/news: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 500
@@ -435,4 +469,6 @@ def index():
 
 if __name__ == '__main__':
     logger.info("Starting Flask server on http://localhost:5000")
-    app.run(debug=True, host='localhost', port=5000)
+    # Start background refresh thread when running directly
+    threading.Thread(target=refresh_cache, daemon=True).start()
+    app.run(debug=True, host='0.0.0.0', port=5000)
