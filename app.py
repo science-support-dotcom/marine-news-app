@@ -20,6 +20,8 @@ cached_articles = None
 last_fetch_time = 0
 FETCH_INTERVAL = 60  # 60 seconds (lowered for immediate testing)
 lock = threading.Lock()
+# Guard to prevent starting multiple cache threads in multi-worker environments
+cache_thread_started = False
 
 # Simple CORS middleware without flask_cors
 @app.after_request
@@ -443,9 +445,9 @@ def refresh_cache():
             continue
 
 
-# Ensure background thread starts once when the app is ready to serve requests
-@app.before_first_request
-def _start_background_thread():
+# Start background thread at import time (safe for Gunicorn / Flask 3.x)
+if not cache_thread_started:
+    cache_thread_started = True
     threading.Thread(target=refresh_cache, daemon=True).start()
 
 @app.route('/api/news')
@@ -469,6 +471,8 @@ def index():
 
 if __name__ == '__main__':
     logger.info("Starting Flask server on http://localhost:5000")
-    # Start background refresh thread when running directly
-    threading.Thread(target=refresh_cache, daemon=True).start()
+    # Ensure thread is started when running directly, but avoid duplicates
+    if not cache_thread_started:
+        cache_thread_started = True
+        threading.Thread(target=refresh_cache, daemon=True).start()
     app.run(debug=True, host='0.0.0.0', port=5000)
