@@ -27,6 +27,7 @@ sources = [
     {"name": "The Guardian Ocean & Marine", "url": "https://www.theguardian.com/environment/oceans/rss", "type": "news"},
     {"name": "BBC Ocean & Marine", "url": "http://feeds.bbci.co.uk/news/science_and_environment/rss.xml", "type": "news"},
     {"name": "The Conversation Ocean", "url": "https://theconversation.com/uk/oceans/articles.atom", "type": "news"},
+    {"name": "Reporterre", "url": "https://reporterre.net/spip.php?page=backend-simple", "type": "news"},
     
     # French Marine-Focused Sources
     {"name": "Le Monde Planète", "url": "https://www.lemonde.fr/planete/rss_full.xml", "type": "news"},
