@@ -32,31 +32,15 @@ sources = [
     
     # French Marine-Focused Sources
     {"name": "Le Monde Planète", "url": "https://www.lemonde.fr/planete/rss_full.xml", "type": "news"},
-    {"name": "Le Monde Oceans", "url": "https://www.lemonde.fr/oceans/", "type": "news"},
-    {"name": "Reporterre", "url": "https://reporterre.net/feed", "type": "news"},
-    {"name": "Reporterre Home", "url": "https://reporterre.net/", "type": "news"},
-    {"name": "Vert le Média", "url": "https://vertlemedia.com/feed", "type": "news"},
     {"name": "Vert Eco Articles", "url": "https://vert.eco/tous-les-articles", "type": "news"},
     {"name": "Le Monde Environnement", "url": "https://www.lemonde.fr/environnement/rss_full.xml", "type": "news"},
-    {"name": "The Conversation Environment FR", "url": "https://theconversation.com/fr/environnement", "type": "news"},
-    {"name": "Guardian Oceans", "url": "https://www.theguardian.com/environment/oceans", "type": "news"},
-    
-    {"name": "Ocean Central Stories", "url": "https://oceancentral.org/stories", "type": "news"},
-    
+    {"name": "The Conversation", "url": "https://theconversation.com/articles.atom?language=en", "type": "news"},    
     # Marine NGOs & International Organizations
     {"name": "Ocean Conservancy", "url": "https://oceanconservancy.org/feed/", "type": "news"},
-    {"name": "WWF Marine", "url": "https://www.worldwildlife.org/feed.xml", "type": "news"},
-    {"name": "Greenpeace Oceans", "url": "https://www.greenpeace.org/global/press-release/feed/", "type": "news"},
-    {"name": "UNEP Oceans", "url": "https://www.unep.org/news-and-stories/feed", "type": "news"},
-    {"name": "IUCN Marine", "url": "https://www.iucn.org/feeds", "type": "news"},
     
-    # Marine Science & Research
-    {"name": "Nature Marine Research", "url": "https://www.nature.com/research/feeds/index.rss", "type": "research"},
-    {"name": "Science Daily Oceanography", "url": "https://www.sciencedaily.com/rss/earth_science/oceanography.xml", "type": "research"},
-    {"name": "PubMed Marine Biology", "url": "https://www.ncbi.nlm.nih.gov/pmc/feed/", "type": "research"},
-    
+    # Marine Science & Research    
     # Specialized Marine Media
-    {"name": "Mongabay Marine", "url": "https://feeds.mongabay.com/mongabay/latest.xml", "type": "news"},
+    {"name": "Mongabay Marine", "url": "http://news.mongabay.com/feed/", "type": "news"},
 ]
 
 # Keywords for filtering articles - STRICTLY MARINE-FOCUSED
