@@ -26,7 +26,11 @@ sources = [
     # International Marine News Outlets
     {"name": "The Guardian Ocean & Marine", "url": "https://www.theguardian.com/environment/oceans/rss", "type": "news"},
     {"name": "BBC Ocean & Marine", "url": "http://feeds.bbci.co.uk/news/science_and_environment/rss.xml", "type": "news"},
-    {"name": "The Conversation Ocean", "url": "https://theconversation.com/uk/oceans/articles.atom", "type": "news"},
+    {"name": "The Conversation FR", "url": "https://theconversation.com/fr/environnement/articles.atom", "type": "news"},
+    {"name": "The Conversation UK", "url": "https://theconversation.com/uk/environment/articles.atom", "type": "news"},
+    {"name": "The Conversation US", "url": "https://theconversation.com/us/environment/articles.atom", "type": "news"},
+
+
     {"name": "Reporterre", "url": "https://reporterre.net/spip.php?page=backend-simple", "type": "news"},
     {"name": "Oceanographic", "url": "https://oceanographicmagazine.com/news/feed/", "type": "news"},
     
