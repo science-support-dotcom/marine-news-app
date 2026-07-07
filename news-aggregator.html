@@ -189,18 +189,6 @@
             padding: 20px 24px 28px;
             max-height: 850px;
             overflow-y: auto;
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 16px;
-            align-items: start;
-            align-content: start;
-        }
-
-        .content-column {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            min-width: 0;
         }
 
         .category-section {
@@ -244,11 +232,16 @@
             padding: 16px 16px 6px;
         }
 
+        .category-grid {
+            display: block;
+        }
+
         .category-body.collapsed {
             display: none;
         }
 
         .theme-subsection {
+            width: 100%;
             margin-bottom: 16px;
             padding-left: 4px;
             border: 1px solid var(--border);
@@ -288,8 +281,8 @@
 
         .article-list {
             list-style: none;
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 10px;
         }
 
@@ -399,6 +392,11 @@
 
             .content {
                 padding: 16px;
+            }
+
+            .category-grid,
+            .article-list {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -613,20 +611,6 @@
 
             let hasContent = false;
             const categories = Object.entries(data || {});
-            const columns = [document.createElement('div'), document.createElement('div')];
-            columns.forEach((column) => {
-                column.className = 'content-column';
-                newsDiv.appendChild(column);
-            });
-
-            const appendToColumn = (createElement) => {
-                const shortestColumn = columns.reduce((acc, column) => {
-                    const accHeight = acc ? acc.childElementCount : 0;
-                    const columnHeight = column.childElementCount;
-                    return columnHeight < accHeight ? column : acc;
-                }, columns[0]);
-                return createElement(shortestColumn);
-            };
 
             if (currentSort === 'newspaper') {
                 const sourceGroups = new Map();
@@ -659,7 +643,7 @@
                     const sortedArticles = sortArticles(articles, 'latest');
                     if (sortedArticles.length > 0) {
                         hasContent = true;
-                        appendToColumn((column) => appendCollapsibleSection(column, sourceName, buildArticleListHtml(sortedArticles)));
+                        appendCollapsibleSection(newsDiv, sourceName, `<div class="category-grid"><div class="theme-subsection"><div class="theme-content">${buildArticleListHtml(sortedArticles)}</div></div></div>`);
                     }
                 }
             } else {
@@ -692,7 +676,7 @@
                     }
 
                     if (categoryHasContent) {
-                        appendToColumn((column) => appendCollapsibleSection(column, category, themesHtml));
+                        appendCollapsibleSection(newsDiv, category, `<div class="category-grid">${themesHtml}</div>`);
                     }
                 }
             }
