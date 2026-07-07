@@ -196,6 +196,13 @@
             align-content: start;
         }
 
+        .content-column {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 0;
+        }
+
         .category-section {
             margin-bottom: 0;
             border: 1px solid var(--border);
@@ -443,15 +450,17 @@
         let showOtherNews = false;
         let currentSort = 'latest';
         let activeTopicFilter = 'all';
+        let onlyOtherNews = false;
 
         const sortSelect = document.getElementById('sortSelect');
         const topicChips = Array.from(document.querySelectorAll('.chip'));
+        const newsDiv = document.getElementById('news');
 
         document.getElementById('refresh').addEventListener('click', loadNews);
         document.getElementById('export').addEventListener('click', exportJSON);
         document.getElementById('toggleOtherNews').addEventListener('click', () => {
-            showOtherNews = !showOtherNews;
-            document.getElementById('toggleOtherNews').textContent = showOtherNews ? '📰 Hide other news' : '📰 Show other news';
+            onlyOtherNews = !onlyOtherNews;
+            document.getElementById('toggleOtherNews').textContent = onlyOtherNews ? '📰 Show main news' : '📰 Show other news';
             displayNews(newsData);
         });
 
@@ -466,6 +475,26 @@
                 topicChips.forEach((item) => item.classList.toggle('active', item === chip));
                 displayNews(newsData);
             });
+        });
+
+        newsDiv.addEventListener('click', (event) => {
+            const toggleButton = event.target.closest('.theme-title');
+            if (!toggleButton) {
+                return;
+            }
+
+            const subsection = toggleButton.closest('.theme-subsection');
+            const content = subsection ? subsection.querySelector('.theme-content') : null;
+            if (!content) {
+                return;
+            }
+
+            const isCollapsed = content.classList.toggle('collapsed');
+            toggleButton.classList.toggle('collapsed', isCollapsed);
+            const icon = toggleButton.querySelector('.toggle-icon');
+            if (icon) {
+                icon.textContent = isCollapsed ? '▸' : '▾';
+            }
         });
 
         function loadNews() {
@@ -553,7 +582,7 @@
             return html;
         }
 
-        function appendCollapsibleSection(newsDiv, title, contentHtml) {
+        function appendCollapsibleSection(parent, title, contentHtml) {
             const sectionDiv = document.createElement('div');
             sectionDiv.className = 'category-section';
 
@@ -570,17 +599,12 @@
                 const isCollapsed = body.classList.toggle('collapsed');
                 header.classList.toggle('collapsed', isCollapsed);
                 header.querySelector('.toggle-icon').textContent = isCollapsed ? '▸' : '▾';
-                requestAnimationFrame(() => {
-                    const nextSection = sectionDiv.nextElementSibling;
-                    if (nextSection) {
-                        nextSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }
-                });
             });
 
             sectionDiv.appendChild(header);
             sectionDiv.appendChild(body);
-            newsDiv.appendChild(sectionDiv);
+            parent.appendChild(sectionDiv);
+            return sectionDiv;
         }
 
         function displayNews(data) {
@@ -589,12 +613,29 @@
 
             let hasContent = false;
             const categories = Object.entries(data || {});
+            const columns = [document.createElement('div'), document.createElement('div')];
+            columns.forEach((column) => {
+                column.className = 'content-column';
+                newsDiv.appendChild(column);
+            });
+
+            const appendToColumn = (createElement) => {
+                const shortestColumn = columns.reduce((acc, column) => {
+                    const accHeight = acc ? acc.childElementCount : 0;
+                    const columnHeight = column.childElementCount;
+                    return columnHeight < accHeight ? column : acc;
+                }, columns[0]);
+                return createElement(shortestColumn);
+            };
 
             if (currentSort === 'newspaper') {
                 const sourceGroups = new Map();
 
                 for (const [category, catData] of categories) {
-                    if (category === 'Other News' && !showOtherNews) {
+                    if (category === 'Other News' && !onlyOtherNews) {
+                        continue;
+                    }
+                    if (category !== 'Other News' && onlyOtherNews) {
                         continue;
                     }
 
@@ -618,12 +659,15 @@
                     const sortedArticles = sortArticles(articles, 'latest');
                     if (sortedArticles.length > 0) {
                         hasContent = true;
-                        appendCollapsibleSection(newsDiv, sourceName, buildArticleListHtml(sortedArticles));
+                        appendToColumn((column) => appendCollapsibleSection(column, sourceName, buildArticleListHtml(sortedArticles)));
                     }
                 }
             } else {
                 for (const [category, catData] of categories) {
-                    if (category === 'Other News' && !showOtherNews) {
+                    if (category === 'Other News' && !onlyOtherNews) {
+                        continue;
+                    }
+                    if (category !== 'Other News' && onlyOtherNews) {
                         continue;
                     }
 
@@ -648,7 +692,7 @@
                     }
 
                     if (categoryHasContent) {
-                        appendCollapsibleSection(newsDiv, category, themesHtml);
+                        appendToColumn((column) => appendCollapsibleSection(column, category, themesHtml));
                     }
                 }
             }
