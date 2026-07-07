@@ -545,19 +545,6 @@
                 const isCollapsed = body.classList.toggle('collapsed');
                 header.classList.toggle('collapsed', isCollapsed);
                 header.querySelector('.toggle-icon').textContent = isCollapsed ? '▸' : '▾';
-
-                if (isCollapsed) {
-                    const nextSection = sectionDiv.nextElementSibling;
-                    if (nextSection && nextSection.classList.contains('category-section')) {
-                        const nextBody = nextSection.querySelector('.category-body');
-                        const nextHeader = nextSection.querySelector('.category-title');
-                        if (nextBody && nextHeader) {
-                            nextBody.classList.remove('collapsed');
-                            nextHeader.classList.remove('collapsed');
-                            nextHeader.querySelector('.toggle-icon').textContent = '▾';
-                        }
-                    }
-                }
             });
 
             sectionDiv.appendChild(header);
@@ -572,15 +559,10 @@
             let hasContent = false;
             const categories = Object.entries(data || {});
 
-            const excludedCategories = new Set(['General News', 'Politics & Policy']);
-
             if (currentSort === 'newspaper') {
                 const sourceGroups = new Map();
 
                 for (const [category, catData] of categories) {
-                    if (excludedCategories.has(category)) {
-                        continue;
-                    }
                     if (category === 'Other News' && !showOtherNews) {
                         continue;
                     }
@@ -610,19 +592,27 @@
                 }
             } else {
                 for (const [category, catData] of categories) {
-                    if (excludedCategories.has(category)) {
-                        continue;
-                    }
                     if (category === 'Other News' && !showOtherNews) {
                         continue;
                     }
 
+                    let themesHtml = '';
+                    let categoryHasContent = false;
+
                     for (const theme in catData) {
                         const articles = sortArticles((catData[theme] || []).filter(articleMatchesFilter));
                         if (articles.length > 0) {
+                            categoryHasContent = true;
                             hasContent = true;
-                            appendCollapsibleSection(newsDiv, theme, buildArticleListHtml(articles));
+                            themesHtml += `<div class="theme-subsection">
+                                <div class="theme-title">${theme}</div>
+                                ${buildArticleListHtml(articles)}
+                            </div>`;
                         }
+                    }
+
+                    if (categoryHasContent) {
+                        appendCollapsibleSection(newsDiv, category, themesHtml);
                     }
                 }
             }
