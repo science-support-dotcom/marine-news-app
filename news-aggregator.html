@@ -189,14 +189,19 @@
             padding: 20px 24px 28px;
             max-height: 850px;
             overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            align-items: start;
         }
 
         .category-section {
-            margin-bottom: 18px;
+            margin-bottom: 0;
             border: 1px solid var(--border);
             border-radius: 12px;
             background: var(--surface);
             overflow: hidden;
+            height: fit-content;
         }
 
         .category-title {
@@ -482,18 +487,69 @@
             return copTerms.some((term) => text.includes(term));
         }
 
-        function sortArticles(articles) {
+        function sortArticles(articles, mode = currentSort) {
             const list = [...articles].filter(Boolean);
 
-            if (currentSort === 'newspaper') {
-                return list.sort((a, b) => (a.source || '').localeCompare(b.source || ''));
-            }
-
-            if (currentSort === 'oldest') {
+            if (mode === 'oldest') {
                 return list.sort((a, b) => new Date(a.published || 0) - new Date(b.published || 0));
             }
 
             return list.sort((a, b) => new Date(b.published || 0) - new Date(a.published || 0));
+        }
+
+        function buildArticleListHtml(articles) {
+            if (!articles.length) {
+                return '';
+            }
+
+            let html = '<ul class="article-list">';
+            for (const article of articles) {
+                const pubDate = article.published
+                    ? new Date(article.published).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+                    : 'Date unavailable';
+
+                html += `<li class="article-item">
+                    <div class="article-title">
+                        <a href="${article.link}" target="_blank" rel="noopener noreferrer">${article.title}</a>
+                    </div>
+                    <div class="article-meta">
+                        <span class="article-source">${article.source || 'Source unavailable'}</span>
+                        <span class="article-date">${pubDate}</span>
+                    </div>`;
+
+                if (article.summary) {
+                    html += `<div class="article-summary">${article.summary}</div>`;
+                }
+
+                html += '</li>';
+            }
+
+            html += '</ul>';
+            return html;
+        }
+
+        function appendCollapsibleSection(newsDiv, title, contentHtml) {
+            const sectionDiv = document.createElement('div');
+            sectionDiv.className = 'category-section';
+
+            const header = document.createElement('button');
+            header.className = 'category-title';
+            header.type = 'button';
+            header.innerHTML = `<span>${title}</span><span class="toggle-icon">▾</span>`;
+
+            const body = document.createElement('div');
+            body.className = 'category-body';
+            body.innerHTML = contentHtml;
+
+            header.addEventListener('click', () => {
+                const isCollapsed = body.classList.toggle('collapsed');
+                header.classList.toggle('collapsed', isCollapsed);
+                header.querySelector('.toggle-icon').textContent = isCollapsed ? '▸' : '▾';
+            });
+
+            sectionDiv.appendChild(header);
+            sectionDiv.appendChild(body);
+            newsDiv.appendChild(sectionDiv);
         }
 
         function displayNews(data) {
@@ -503,69 +559,61 @@
             let hasContent = false;
             const categories = Object.entries(data || {});
 
-            for (const [category, catData] of categories) {
-                if (category === 'Other News' && !showOtherNews) {
-                    continue;
-                }
+            if (currentSort === 'newspaper') {
+                const sourceGroups = new Map();
 
-                const categoryDiv = document.createElement('div');
-                categoryDiv.className = 'category-section';
+                for (const [category, catData] of categories) {
+                    if (category === 'Other News' && !showOtherNews) {
+                        continue;
+                    }
 
-                const categoryHeader = document.createElement('button');
-                categoryHeader.className = 'category-title';
-                categoryHeader.type = 'button';
-                categoryHeader.innerHTML = `<span>${category}</span><span class="toggle-icon">▾</span>`;
-
-                const categoryBody = document.createElement('div');
-                categoryBody.className = 'category-body';
-
-                let themesHtml = '';
-                let categoryHasContent = false;
-
-                for (const theme in catData) {
-                    const articles = sortArticles((catData[theme] || []).filter(articleMatchesFilter));
-                    if (articles.length > 0) {
-                        categoryHasContent = true;
-                        hasContent = true;
-                        themesHtml += `<div class="theme-subsection">
-                            <div class="theme-title">${theme}</div>
-                            <ul class="article-list">`;
-
-                        for (const article of articles) {
-                            const pubDate = article.published
-                                ? new Date(article.published).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-                                : 'Date unavailable';
-
-                            themesHtml += `<li class="article-item">
-                                <div class="article-title">
-                                    <a href="${article.link}" target="_blank" rel="noopener noreferrer">${article.title}</a>
-                                </div>
-                                <div class="article-meta">
-                                    <span class="article-source">${article.source || 'Source unavailable'}</span>
-                                    <span class="article-date">${pubDate}</span>
-                                </div>`;
-
-                            if (article.summary) {
-                                themesHtml += `<div class="article-summary">${article.summary}</div>`;
+                    for (const theme in catData) {
+                        for (const article of catData[theme] || []) {
+                            if (!articleMatchesFilter(article)) {
+                                continue;
                             }
 
-                            themesHtml += '</li>';
+                            const sourceName = article.source || 'Source unavailable';
+                            if (!sourceGroups.has(sourceName)) {
+                                sourceGroups.set(sourceName, []);
+                            }
+                            sourceGroups.get(sourceName).push(article);
                         }
-
-                        themesHtml += '</ul></div>';
                     }
                 }
 
-                if (categoryHasContent) {
-                    categoryBody.innerHTML = themesHtml;
-                    categoryHeader.addEventListener('click', () => {
-                        const isCollapsed = categoryBody.classList.toggle('collapsed');
-                        categoryHeader.classList.toggle('collapsed', isCollapsed);
-                        categoryHeader.querySelector('.toggle-icon').textContent = isCollapsed ? '▸' : '▾';
-                    });
-                    categoryDiv.appendChild(categoryHeader);
-                    categoryDiv.appendChild(categoryBody);
-                    newsDiv.appendChild(categoryDiv);
+                const sortedSources = Array.from(sourceGroups.entries()).sort(([a], [b]) => a.localeCompare(b));
+                for (const [sourceName, articles] of sortedSources) {
+                    const sortedArticles = sortArticles(articles, 'latest');
+                    if (sortedArticles.length > 0) {
+                        hasContent = true;
+                        appendCollapsibleSection(newsDiv, sourceName, buildArticleListHtml(sortedArticles));
+                    }
+                }
+            } else {
+                for (const [category, catData] of categories) {
+                    if (category === 'Other News' && !showOtherNews) {
+                        continue;
+                    }
+
+                    let themesHtml = '';
+                    let categoryHasContent = false;
+
+                    for (const theme in catData) {
+                        const articles = sortArticles((catData[theme] || []).filter(articleMatchesFilter));
+                        if (articles.length > 0) {
+                            categoryHasContent = true;
+                            hasContent = true;
+                            themesHtml += `<div class="theme-subsection">
+                                <div class="theme-title">${theme}</div>
+                                ${buildArticleListHtml(articles)}
+                            </div>`;
+                        }
+                    }
+
+                    if (categoryHasContent) {
+                        appendCollapsibleSection(newsDiv, category, themesHtml);
+                    }
                 }
             }
 
