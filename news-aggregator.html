@@ -193,6 +193,7 @@
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 16px;
             align-items: start;
+            align-content: start;
         }
 
         .category-section {
@@ -202,6 +203,7 @@
             background: var(--surface);
             overflow: hidden;
             height: fit-content;
+            break-inside: avoid;
         }
 
         .category-title {
@@ -242,16 +244,39 @@
         .theme-subsection {
             margin-bottom: 16px;
             padding-left: 4px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            background: #fcfdff;
+            break-inside: avoid;
         }
 
         .theme-title {
             background: var(--accent-soft);
             color: var(--accent-strong);
             padding: 10px 12px;
-            border-radius: 8px;
+            border-radius: 0;
             font-size: 15px;
             font-weight: 700;
-            margin-bottom: 10px;
+            margin-bottom: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .theme-title.collapsed {
+            border-bottom: none;
+        }
+
+        .theme-content {
+            padding: 10px 12px 12px;
+        }
+
+        .theme-content.collapsed {
+            display: none;
         }
 
         .article-list {
@@ -545,6 +570,12 @@
                 const isCollapsed = body.classList.toggle('collapsed');
                 header.classList.toggle('collapsed', isCollapsed);
                 header.querySelector('.toggle-icon').textContent = isCollapsed ? '▸' : '▾';
+                requestAnimationFrame(() => {
+                    const nextSection = sectionDiv.nextElementSibling;
+                    if (nextSection) {
+                        nextSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                });
             });
 
             sectionDiv.appendChild(header);
@@ -605,8 +636,13 @@
                             categoryHasContent = true;
                             hasContent = true;
                             themesHtml += `<div class="theme-subsection">
-                                <div class="theme-title">${theme}</div>
-                                ${buildArticleListHtml(articles)}
+                                <button type="button" class="theme-title" data-theme="${theme}">
+                                    <span>${theme}</span>
+                                    <span class="toggle-icon">▾</span>
+                                </button>
+                                <div class="theme-content">
+                                    ${buildArticleListHtml(articles)}
+                                </div>
                             </div>`;
                         }
                     }
