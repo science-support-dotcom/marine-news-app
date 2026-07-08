@@ -29,6 +29,8 @@ sources = [
     {"name": "The Conversation FR", "url": "https://theconversation.com/fr/environnement/articles.atom", "type": "news"},
     {"name": "The Conversation UK", "url": "https://theconversation.com/uk/environment/articles.atom", "type": "news"},
     {"name": "The Conversation US", "url": "https://theconversation.com/us/environment/articles.atom", "type": "news"},
+    {"name": "Carbonbrief", "url": "https://www.carbonbrief.org/feed/", "type": "news"},
+    {"name": "Climate change news", "url": "https://www.climatechangenews.com/feed/", "type": "news"},
 
 
     {"name": "Reporterre", "url": "https://reporterre.net/spip.php?page=backend-simple", "type": "news"},
