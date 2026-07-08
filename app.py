@@ -221,7 +221,7 @@ def fetch_articles():
     articles = []
     seen_links = set()
     # Use timezone-aware datetime to avoid comparison issues
-    cutoff_date = datetime.now(timezone.utc) - timedelta(days=14)
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=30)
     
     for source in sources:
         try:
